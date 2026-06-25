@@ -2,7 +2,6 @@
 
 Coil GUI features a responsive layout system inspired by modern web (CSS Flexbox) and mobile framework patterns. This guide explains how widgets are sized, positioned, and how different layout managers work together to create dynamic user interfaces.
 
----
 
 ## 1. Core Concepts: Requested vs. Layout Dimensions
 
@@ -18,7 +17,6 @@ These are assigned by the **Layout Manager** during the layout phase.
 -   A layout manager might override your requested size (e.g., if a widget is set to `stretch` or has `flex-grow`).
 -   You should **always** use these properties (or the widget's render methods) when doing custom drawing or event handling, as they represent the actual state on screen.
 
----
 
 ## 2. The Measure Phase (Bottom-Up)
 
@@ -31,7 +29,6 @@ Every widget has a `measure` method. It is called by parent layout managers to a
 -   **Label**: Returns the exact size of its text content.
 -   **Container**: Asks its internal Layout Manager to measure its children and returns the total size needed to wrap them.
 
----
 
 ## 3. Layout Managers
 
@@ -65,7 +62,6 @@ The simplest layout. It places children at their requested `x` and `y` coordinat
 -   If no `width`/`height` is set, the child will keep its measured size.
 -   Positions are relative to the top-left of the container.
 
----
 
 ## 4. Building a Responsive UI
 
