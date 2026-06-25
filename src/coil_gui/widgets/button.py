@@ -4,6 +4,7 @@ from ..core.container import Container
 from .label import Label
 from ..layout.flex import FlexLayout, JustifyContent, AlignItems
 from ..utils.color import parse_color
+from ..utils.layout import resolve_padding_tuple
 
 class Button(Container):
     def __init__(self, text: str, on_click: Optional[Callable[[], None]] = None, **kwargs):
@@ -42,13 +43,20 @@ class Button(Container):
         self.mark_render_dirty()
 
     def perform_layout(self):
-        # Synchronize padding from style to layout if it's a FlexLayout
         if isinstance(self.layout, FlexLayout):
             p = self.style.get("padding", self.layout.padding)
-            self.layout.padding_top = self.style.get("padding_top", p)
-            self.layout.padding_bottom = self.style.get("padding_bottom", p)
-            self.layout.padding_left = self.style.get("padding_left", p)
-            self.layout.padding_right = self.style.get("padding_right", p)
+            # Handle tuple padding from style
+            if isinstance(p, tuple):
+                pt, pb, pl, pr = resolve_padding_tuple(p)
+                self.layout.padding_top = pt
+                self.layout.padding_bottom = pb
+                self.layout.padding_left = pl
+                self.layout.padding_right = pr
+            else:
+                self.layout.padding_top = self.style.get("padding_top", p)
+                self.layout.padding_bottom = self.style.get("padding_bottom", p)
+                self.layout.padding_left = self.style.get("padding_left", p)
+                self.layout.padding_right = self.style.get("padding_right", p)
 
         super().perform_layout()
 
