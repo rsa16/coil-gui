@@ -15,6 +15,8 @@ def parse_color(color: ColorType) -> pygame.Color:
         return color
     if isinstance(color, str):
         color = color.strip().lower()
+        if color == "transparent":
+            return pygame.Color(0, 0, 0, 0)
         try:
             return pygame.Color(color)
         except (ValueError, pygame.error):
