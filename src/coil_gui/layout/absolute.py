@@ -13,6 +13,6 @@ class AbsoluteLayout(Layout):
 
     def arrange(self, container, x: float, y: float, w: float, h: float):
         for child in container.children:
-            cw = child.constraints.clamp_w(child.width)
-            ch = child.constraints.clamp_h(child.height)
+            cw = child.constraints.clamp_w(child.resolve_width(w))
+            ch = child.constraints.clamp_h(child.resolve_height(h))
             child.set_layout_box(child.x, child.y, cw, ch)

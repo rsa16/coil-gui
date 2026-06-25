@@ -4,6 +4,7 @@ from typing import Optional, List, Set, Any, TYPE_CHECKING, Tuple, Callable
 from ..style.proxy import StyleProxy
 from ..effects.base import Effect
 from ..utils.color import parse_color
+from ..utils.layout import resolve_padding_tuple, apply_padding_to_widget
 from ..binding.binder import bind
 
 from ..layout.anchor import AnchorTargetProperty, Anchors
@@ -16,18 +17,38 @@ from ..animation.transition import TransitionManager
 if TYPE_CHECKING:
     from ..manager import UIManager
 
+
+def _parse_pct(value: Any) -> Optional[float]:
+    """If value is a string like '50%', return the percentage as a float (0.0-1.0). Otherwise return None."""
+    if isinstance(value, str) and value.endswith("%"):
+        try:
+            return float(value.rstrip("%")) / 100.0
+        except ValueError:
+            return None
+    return None
+
+
+def _resolve_pct(pct: Optional[float], parent_size: float, fallback: float = 0.0) -> float:
+    """Resolve a percentage to an absolute value given a parent size."""
+    if pct is not None:
+        return pct * parent_size
+    return fallback
+
+
 class Widget:
     def __init__(self, x: float = 0, y: float = 0, width: float = 0, height: float = 0, **kwargs):
         self._x = x
         self._y = y
-        self._width = width
-        self._height = height
+        self._width = width if not isinstance(width, str) else 0.0
+        self._height = height if not isinstance(height, str) else 0.0
+        self._width_pct: Optional[float] = _parse_pct(width)
+        self._height_pct: Optional[float] = _parse_pct(height)
 
         # LayoutManager assigns the following values
         self.layout_x = x
         self.layout_y = y
-        self.layout_width = width
-        self.layout_height = height
+        self.layout_width = 0.0
+        self.layout_height = 0.0
 
         # Constraints
         self.min_width: float = kwargs.get("min_width", 0.0)
@@ -35,12 +56,16 @@ class Widget:
         self.min_height: float = kwargs.get("min_height", 0.0)
         self.max_height: float = kwargs.get("max_height", float("inf"))
 
-        # Padding (uniform or per-side)
-        self.padding: float = kwargs.get("padding", 0.0)
-        self.padding_top: Optional[float] = kwargs.get("padding_top", None)
-        self.padding_bottom: Optional[float] = kwargs.get("padding_bottom", None)
-        self.padding_left: Optional[float] = kwargs.get("padding_left", None)
-        self.padding_right: Optional[float] = kwargs.get("padding_right", None)
+        # Padding (uniform, tuple, or per-side)
+        padding_val = kwargs.get("padding", 0.0)
+        apply_padding_to_widget(
+            self,
+            padding_val,
+            kwargs.get("padding_top"),
+            kwargs.get("padding_bottom"),
+            kwargs.get("padding_left"),
+            kwargs.get("padding_right"),
+        )
 
         # Margin (uniform or per-side)
         self.margin: float = kwargs.get("margin", 0.0)
@@ -121,9 +146,15 @@ class Widget:
 
     @width.setter
     def width(self, value: float):
-        if self._width != value:
-            self._width = value
-            self.mark_layout_dirty()
+        pct = _parse_pct(value)
+        if pct is not None:
+            self._width_pct = pct
+            self._width = 0.0
+        else:
+            self._width_pct = None
+            if self._width != value:
+                self._width = value
+        self.mark_layout_dirty()
 
     @property
     def height(self) -> float:
@@ -131,9 +162,23 @@ class Widget:
 
     @height.setter
     def height(self, value: float):
-        if self._height != value:
-            self._height = value
-            self.mark_layout_dirty()
+        pct = _parse_pct(value)
+        if pct is not None:
+            self._height_pct = pct
+            self._height = 0.0
+        else:
+            self._height_pct = None
+            if self._height != value:
+                self._height = value
+        self.mark_layout_dirty()
+
+    def resolve_width(self, parent_width: float) -> float:
+        """Resolve the width, taking percentage into account."""
+        return _resolve_pct(self._width_pct, parent_width, self._width)
+
+    def resolve_height(self, parent_height: float) -> float:
+        """Resolve the height, taking percentage into account."""
+        return _resolve_pct(self._height_pct, parent_height, self._height)
 
     def set_layout_box(self, x: float, y: float, w: float, h: float):
         """Called by layout managers to set the final layout position and size."""

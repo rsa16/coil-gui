@@ -42,6 +42,14 @@ class Container(Widget):
         if self.layout_height == 0:
             self.layout_height = h
 
+        for child in self.children:
+            resolved_w = child.resolve_width(self.layout_width)
+            resolved_h = child.resolve_height(self.layout_height)
+            if resolved_w != 0:
+                child.layout_width = resolved_w
+            if resolved_h != 0:
+                child.layout_height = resolved_h
+
         # Arrange children
         self.layout.arrange(self, 0, 0, w, h)
 

@@ -2,6 +2,7 @@ from enum import Enum, auto
 from typing import List, Optional, TYPE_CHECKING, Any, Tuple, Union
 from .base import Layout
 from .constraints import Size
+from ..utils.layout import resolve_padding_tuple
 
 if TYPE_CHECKING:
     from ..core.widget import Widget
@@ -105,6 +106,12 @@ class FlexLayout(Layout):
     """
     CSS Flexbox Python implementation, more or less.
     Supports row/column flow, wrapping, alignment, gaps, padding, and per-child flex properties.
+
+    Padding can be specified as:
+    - A single float: uniform padding on all sides
+    - A 2-tuple (vertical, horizontal): top/bottom and left/right
+    - A 3-tuple (top, horizontal, bottom): top, left/right, bottom
+    - A 4-tuple (top, right, bottom, left): all four sides individually
     """
     def __init__(self,
                  direction: Union[FlexDirection, str] = FlexDirection.ROW,
@@ -115,7 +122,7 @@ class FlexLayout(Layout):
                  gap: float = 0.0,
                  row_gap: Optional[float] = None,
                  column_gap: Optional[float] = None,
-                 padding: float = 0.0,
+                 padding: Union[float, Tuple[float, ...]] = 0.0,
                  padding_top: Optional[float] = None,
                  padding_bottom: Optional[float] = None,
                  padding_left: Optional[float] = None,
@@ -128,11 +135,20 @@ class FlexLayout(Layout):
         self.gap = gap
         self.row_gap = row_gap
         self.column_gap = column_gap
-        self.padding = padding
-        self.padding_top = padding_top
-        self.padding_bottom = padding_bottom
-        self.padding_left = padding_left
-        self.padding_right = padding_right
+
+        if isinstance(padding, tuple):
+            pt, pb, pl, pr = resolve_padding_tuple(padding)
+            self.padding = 0.0
+            self.padding_top = pt
+            self.padding_bottom = pb
+            self.padding_left = pl
+            self.padding_right = pr
+        else:
+            self.padding = padding
+            self.padding_top = padding_top
+            self.padding_bottom = padding_bottom
+            self.padding_left = padding_left
+            self.padding_right = padding_right
 
     def _get_padding(self) -> Tuple[float, float, float, float]:
         pt = self.padding_top if self.padding_top is not None else self.padding
@@ -355,10 +371,10 @@ class FlexLayout(Layout):
                 basis = f.basis
                 if is_row:
                     basis = child.constraints.clamp_w(basis)
-                    cross = child.constraints.clamp_h(child.height)
+                    cross = child.constraints.clamp_h(child.resolve_height(available_h))
                 else:
                     basis = child.constraints.clamp_h(basis)
-                    cross = child.constraints.clamp_w(child.width)
+                    cross = child.constraints.clamp_w(child.resolve_width(available_w))
             else:
                 # Ask child to measure itself
                 res = child.measure(available_w, available_h)
