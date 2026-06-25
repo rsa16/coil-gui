@@ -198,6 +198,14 @@ _EASINGS = {
     "ease-out": cubic_out,
     "ease_in_out": cubic_in_out,
     "ease-in-out": cubic_in_out,
+    "ease_out_quad": quad_out,
+    "ease-out-quad": quad_out,
+    "ease_in_quad": quad_in,
+    "ease-in-quad": quad_in,
+    "ease_out_cubic": cubic_out,
+    "ease-out-cubic": cubic_out,
+    "ease_in_cubic": cubic_in,
+    "ease-in-cubic": cubic_in,
 }
 
 def get_easing(name: str) -> EasingFunction:
